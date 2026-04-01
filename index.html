@@ -2,53 +2,61 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <meta name="description" content="April Fools Future Prediction - Scratch Card Surprise">
-    <title>✨ Future Predictor  ✨</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="Reveal what the cosmos holds for you — if you dare.">
+    <title>✦ The Oracle — Predict Your Future ✦</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="app-container">
+
+        <!-- Page Title -->
+        <div class="app-title">
+            <h1>✦ The Oracle ✦</h1>
+            <div class="title-ornament">Reveal · Destiny · Truth</div>
+            <p>Answer what the stars demand — and your fate shall be revealed</p>
+        </div>
+
         <!-- Stage 1: Basic Info -->
         <div class="stage-card active" id="stage1">
             <div class="stage-header">
-                <div class="stage-number">01</div>
-                <h2>Welcome to Predict Your Future</h2>
-                <p>Please fill the correct answers to get started</p>
+                <div class="stage-number">I</div>
+                <h2>Your Identity</h2>
+                <p>The cosmos must know who you are</p>
             </div>
-            
+
             <div class="form-group">
-                <label>📝 First Name</label>
-                <input type="text" id="firstName" placeholder="Enter first name" autocomplete="off">
+                <label>First Name</label>
+                <input type="text" id="firstName" placeholder="Enter your first name" autocomplete="off">
             </div>
-            
+
             <div class="form-group">
-                <label>📝 Last Name</label>
-                <input type="text" id="lastName" placeholder="Enter last name" autocomplete="off">
+                <label>Last Name</label>
+                <input type="text" id="lastName" placeholder="Enter your last name" autocomplete="off">
             </div>
-            
+
             <div class="form-group">
-                <label>📅 Date of Birth</label>
+                <label>Date of Birth</label>
                 <input type="date" id="dob">
             </div>
-            
+
             <div class="form-group">
-                <label>⚥ Gender</label>
+                <label>Gender</label>
                 <select id="gender">
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
                     <option value="Other">Other</option>
                 </select>
             </div>
-            
+
             <div class="form-group">
-                <label>♈ Zodiac Sign</label>
+                <label>Zodiac Sign</label>
                 <div class="zodiac-grid" id="zodiacGrid"></div>
                 <input type="hidden" id="selectedZodiac">
             </div>
-            
+
             <div class="form-group">
-                <label>💑 Status</label>
+                <label>Relationship Status</label>
                 <select id="status">
                     <option value="Single">Single</option>
                     <option value="Committed">Committed</option>
@@ -56,110 +64,114 @@
                     <option value="It's Complicated">It's Complicated</option>
                 </select>
             </div>
-            
-            <button class="next-btn" data-next="stage2">Next →</button>
+
+            <button class="next-btn" data-next="stage2">Continue →</button>
         </div>
-        
+
         <!-- Stage 2: Family Details -->
         <div class="stage-card" id="stage2">
             <div class="stage-header">
-                <div class="stage-number">02</div>
-                <h2>Your Family Circle</h2>
-                <p>Tell us about your family</p>
+                <div class="stage-number">II</div>
+                <h2>Your Bloodline</h2>
+                <p>Family roots shape the celestial map</p>
             </div>
-            
+
             <div class="form-group">
-                <label>👨‍👩‍👧 Family Members Count (0-9)</label>
+                <label>Family Members (0–9)</label>
                 <input type="number" id="familyCount" min="0" max="9" value="4">
             </div>
-            
+
             <div class="form-group">
-                <label>👨 Father's Name</label>
-                <input type="text" id="fatherName" placeholder="Father's full name">
+                <label>Father's Full Name</label>
+                <input type="text" id="fatherName" placeholder="Father's name">
             </div>
-            
+
             <div class="form-group">
-                <label>👩 Mother's Name</label>
-                <input type="text" id="motherName" placeholder="Mother's full name">
+                <label>Mother's Full Name</label>
+                <input type="text" id="motherName" placeholder="Mother's name">
             </div>
-            
+
             <div class="form-group">
-                <label>👥 Siblings</label>
+                <label>Siblings</label>
                 <div id="siblingsList"></div>
                 <button type="button" class="add-sibling-btn" id="addSiblingBtn">+ Add Sibling</button>
             </div>
-            
+
             <div class="stage-buttons">
                 <button class="back-btn" data-back="stage1">← Back</button>
-                <button class="next-btn" data-next="stage3">Next →</button>
+                <button class="next-btn" data-next="stage3">Continue →</button>
             </div>
         </div>
-        
+
         <!-- Stage 3: Prediction & Secret Code -->
         <div class="stage-card" id="stage3">
             <div class="stage-header">
-                <div class="stage-number">03</div>
-                <h2>What do you wish to Predict?</h2>
-                <p>Select your prediction desire</p>
+                <div class="stage-number">III</div>
+                <h2>Seek Your Destiny</h2>
+                <p>Prove your identity to unlock the oracle</p>
             </div>
-            
+
             <div class="form-group">
-                <label>✨ Choose Your Prediction</label>
+                <label>Your Prophecy</label>
                 <select id="predictionType">
-                    <option value="event">Upcoming Event Happens</option>
-                    <option value="partner">Future Partner</option>
-                    <option value="memories">Past Memories Reviews</option>
-                    <option value="dreams">Your Favorite Dreams Will Achieve</option>
-                    <option value="luck">Check Your Luck</option>
+                    <option value="event">An Upcoming Event</option>
+                    <option value="partner">Your Future Partner</option>
+                    <option value="memories">A Past Memory Revealed</option>
+                    <option value="dreams">A Dream That Will Come True</option>
+                    <option value="luck">Your Luck Reading</option>
                 </select>
             </div>
-            
+
             <div class="secret-question-area" id="secretQuestionArea">
-                <div class="question-badge">🔐 Security Verification</div>
+                <div class="question-badge">🔐 Identity Verification</div>
                 <div id="questionText" class="question-text"></div>
-                <input type="text" id="secretAnswer" placeholder="Enter your answer" autocomplete="off">
+                <input type="text" id="secretAnswer" placeholder="Enter your answer…" autocomplete="off">
                 <div id="generatedCodeDisplay" class="code-display"></div>
             </div>
-            
+
             <div class="stage-buttons">
                 <button class="back-btn" data-back="stage2">← Back</button>
-                <button class="next-btn" id="verifySecretBtn">Verify & Continue →</button>
+                <button class="next-btn" id="verifySecretBtn">Reveal My Fate →</button>
             </div>
         </div>
-    </div>
-    
+
+    </div><!-- /.app-container -->
+
     <!-- Scratch Card Modal -->
     <div id="scratchModal" class="scratch-modal">
         <div class="scratch-modal-content">
-            <div class="scratch-card-container">
-                <div class="scratch-header">
-                    <h3>🎁 SURPRISE CARD 🎁</h3>
-                    <p>Enter secret code to unlock scratch</p>
-                </div>
-                
-                <div class="code-input-area">
-                    <input type="text" id="scratchCodeInput" placeholder="Paste your secret code here">
-                    <button id="unlockScratchBtn">Unlock Scratch Card</button>
-                </div>
-                
-                <div class="scratch-wrapper" id="scratchWrapper" style="display: none;">
-                    <canvas id="scratchCanvas" width="400" height="250"></canvas>
-                    <div class="reward-content" id="rewardContent">
-                        <div class="reward-icon">🎁✨</div>
+            <div class="scratch-header">
+                <h3>✦ Your Destiny Awaits ✦</h3>
+                <p>Enter your secret code to unseal the oracle</p>
+            </div>
+
+            <div class="code-input-area">
+                <input type="text" id="scratchCodeInput" placeholder="Paste secret code here…">
+                <button id="unlockScratchBtn">Unseal</button>
+            </div>
+
+            <div class="scratch-wrapper" id="scratchWrapper" style="display:none;">
+                <!-- reward behind canvas -->
+                <div class="reward-content" id="rewardContent">
+                    <div class="reward-inner" id="rewardInner">
+                        <div class="reward-icon">🔮</div>
                         <div class="reward-title">SCRATCH TO REVEAL</div>
-                        <div class="scratch-instruction">👆 Scratch the silver area 👆</div>
+                        <div class="scratch-instruction">Run your finger across the surface</div>
                     </div>
                 </div>
+                <!-- canvas on top -->
+                <canvas id="scratchCanvas"></canvas>
             </div>
-            
-            <div id="foolMessageArea" style="display: none;"></div>
-            <div id="shareSection" style="display: none;" class="share-section">
-                <button id="shareBtn" class="share-btn">👍🏻 Share to Fool Friends 😘</button>
+
+            <div id="foolMessageArea" style="display:none;"></div>
+
+            <div id="shareSection" style="display:none;" class="share-section">
+                <button id="shareBtn" class="share-btn">✦ Share with Friends</button>
                 <button id="closeModalBtn" class="close-btn">Close</button>
             </div>
         </div>
     </div>
-    
+
     <script src="script.js"></script>
 </body>
 </html>
