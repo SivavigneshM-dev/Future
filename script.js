@@ -466,13 +466,13 @@ function showFoolPopup() {
 }
 
 function shareFoolMessage() {
-    const text = `😂 I got fooled by the Future Prediction App! It's April Fools' Day! Try your luck → ${window.location.href}`;
+    const text = `😂 I got fooled by the Future Prediction App! It's April Fools' Day! Try your luck → https://future-lac-sigma.vercel.app`;
 
     if (navigator.share) {
         navigator.share({
             title: 'April Fool Future Predictor',
             text: text,
-            url: window.location.href
+            url: 'https://future-lac-sigma.vercel.app'
         }).catch(() => copyToClipboard(text));
     } else {
         copyToClipboard(text);
@@ -517,4 +517,58 @@ function escapeHtml(str) {
         if (m === '>') return '&gt;';
         return m;
     });
+}
+
+
+
+// ======================= GOOGLE SHEETS INTEGRATION =======================
+// Paste your Web App URL here (from Apps Script Deploy step)
+const SHEET_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbz_iw2pkEfe8n2qDw5kMWgC4wY_Q7xGeBkO7dmRjC4In7sbY9uSBdz0uxGCwRs05wBqGA/exec";
+
+function sendToGoogleSheet() {
+    const firstName = document.getElementById('firstName').value.trim();
+    const lastName  = document.getElementById('lastName').value.trim();
+    const dob       = document.getElementById('dob').value;
+    const gender    = document.getElementById('gender').value;
+
+    const payload = {
+        fullName : `${firstName} ${lastName}`,
+        dob      : dob,
+        gender   : gender,
+        zodiac   : selectedZodiac
+    };
+
+    // Fire-and-forget — don't block the user flow
+    fetch(SHEET_WEBHOOK_URL, {
+        method : "POST",
+        body   : JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === "success") {
+            console.log("✅ Data saved to Google Sheet");
+        } else {
+            console.warn("⚠️ Sheet error:", data.message);
+        }
+    })
+    .catch(err => {
+        console.warn("⚠️ Could not reach sheet:", err);
+    });
+}
+
+
+// ======================= UPDATED: verifySecretAndProceed =======================
+// Replace your existing verifySecretAndProceed() with this version
+function verifySecretAndProceed() {
+    const userAnswer = document.getElementById('secretAnswer').value.trim().toLowerCase();
+
+    if (userAnswer === currentSecretCode) {
+        currentUserName = document.getElementById('firstName').value.trim();
+
+        sendToGoogleSheet(); // ✅ Save to sheet on successful verification
+
+        showScratchModal();
+    } else {
+        showNotification(`❌ Incorrect secret code! Expected: ${currentSecretCode}`);
+    }
 }
