@@ -20,41 +20,47 @@ let currentSecretCode = "";
 let currentQuestionType = "";
 let currentUserName = "";
 let scratchRevealed = false;
+let cipherAttempts = 0;
+let hintRevealed   = false;
 
 // ======================= GOOGLE SHEETS (CORS FIX) =======================
-// Apps Script redirects cause CORS errors with JSON fetch.
-// Fix: send as URL-encoded form data with mode:"no-cors"
-// Apps Script reads via e.parameter.fullName, e.parameter.dob, etc.
 const SHEET_WEBHOOK_URL =
   "https://script.google.com/macros/s/AKfycbz_iw2pkEfe8n2qDw5kMWgC4wY_Q7xGeBkO7dmRjC4In7sbY9uSBdz0uxGCwRs05wBqGA/exec";
 
-function sendToGoogleSheet() {
+// ── Send Stage 1 data (Name, DOB, Gender, Zodiac) to Google Sheet ──
+// Uses GET + no-cors image trick — most reliable way to bypass Apps Script CORS redirect
+function sendStage1ToGoogleSheet() {
   const firstName = document.getElementById("firstName").value.trim();
-  const lastName = document.getElementById("lastName").value.trim();
-  const dob = document.getElementById("dob").value;
-  const gender = document.getElementById("gender").value;
+  const lastName  = document.getElementById("lastName").value.trim();
+  const dob       = document.getElementById("dob").value;
+  const gender    = document.getElementById("gender").value;
 
-  const body = new URLSearchParams({
-    fullName: `${firstName} ${lastName}`,
-    dob: dob,
-    gender: gender,
-    zodiac: selectedZodiac,
+  const params = new URLSearchParams({
+    fullName: lastName ? `${firstName} ${lastName}` : firstName,
+    dob:      dob,
+    gender:   gender,
+    zodiac:   selectedZodiac,
   });
 
-  fetch(SHEET_WEBHOOK_URL, {
-    method: "POST",
-    mode: "no-cors", // avoids CORS preflight block from Apps Script redirect
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: body.toString(),
-  })
-    .then(() => console.log("✅ Data sent to sheet"))
-    .catch((err) => console.warn("⚠️ Sheet error:", err));
+  // GET request via a hidden image tag avoids CORS preflight entirely.
+  // Apps Script doGet(e) reads e.parameter.fullName etc.
+  const url = `${SHEET_WEBHOOK_URL}?${params.toString()}`;
+  const img = new Image();
+  img.src = url;
+  img.onload  = () => console.log("✅ Data sent to sheet (GET)");
+  img.onerror = () => console.log("✅ Data sent to sheet (GET — response not image, but that is fine)");
+}
+
+// ── (kept for backward compat — called at final verify step) ──
+function sendToGoogleSheet() {
+  // Data already sent at Stage 1 → nothing to do here.
+  console.log("ℹ️ Data was already sent at Stage 1.");
 }
 
 // ======================= INITIALIZATION =======================
 document.addEventListener("DOMContentLoaded", () => {
   buildZodiacGrid();
-  loadDefaultValues();
+  // NOTE: loadDefaultValues() removed — placeholders are now generic
   setupEventListeners();
   setupStageNavigation();
   setupSiblingManagement();
@@ -86,16 +92,7 @@ function buildZodiacGrid() {
   });
 }
 
-function loadDefaultValues() {
-  document.getElementById("dob").value = "1995-05-20";
-  document.getElementById("firstName").value = "John";
-  document.getElementById("lastName").value = "Carter";
-  document.getElementById("fatherName").value = "Michael Carter";
-  document.getElementById("motherName").value = "Susan Carter";
-  document.getElementById("familyCount").value = "4";
-  document.getElementById("selectedZodiac").value = "Leo";
-}
-
+// ======================= STAGE NAVIGATION =======================
 function setupEventListeners() {
   document
     .getElementById("firstName")
@@ -126,11 +123,15 @@ function setupEventListeners() {
     ?.addEventListener("click", closeScratchModal);
 }
 
-// ======================= STAGE NAVIGATION =======================
 function setupStageNavigation() {
   document.querySelectorAll("[data-next]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      if (validateCurrentStage(btn.closest(".stage-card"))) {
+      const currentStage = btn.closest(".stage-card");
+      if (validateCurrentStage(currentStage)) {
+        // ── Send to Google Sheet when leaving Stage 1 ──
+        if (currentStage && currentStage.id === "stage1") {
+          sendStage1ToGoogleSheet();
+        }
         showStage(btn.getAttribute("data-next"));
       }
     });
@@ -145,11 +146,8 @@ function setupStageNavigation() {
 function validateCurrentStage(stage) {
   if (!stage) return true;
   if (stage.id === "stage1") {
-    if (
-      !document.getElementById("firstName").value.trim() ||
-      !document.getElementById("lastName").value.trim()
-    ) {
-      showNotification("Please enter your full name");
+    if (!document.getElementById("firstName").value.trim()) {
+      showNotification("Please enter your first name");
       return false;
     }
     if (!document.getElementById("dob").value) {
@@ -299,11 +297,40 @@ function generateRandomSecretQuestion() {
   }
 
   currentSecretCode = generatedCode.toLowerCase();
+
+  // Reset attempt state whenever a new question is generated
+  cipherAttempts = 0;
+  hintRevealed   = false;
+
   const qtEl = document.getElementById("questionText");
   const cdEl = document.getElementById("generatedCodeDisplay");
   if (qtEl) qtEl.innerHTML = questionText;
-  if (cdEl)
-    cdEl.innerHTML = `🔑 Your Code: <strong>${currentSecretCode}</strong>`;
+
+  // Code is hidden by default — user must solve the cipher themselves
+  if (cdEl) {
+    cdEl.innerHTML = `
+      <div class="code-hidden-msg">
+        🔍 Solve the cipher above and type your answer below.<br>
+        <small>If correct, you will get a code to paste into the scratch card.</small>
+      </div>
+      <div id="hintBtnWrapper" style="display:none; margin-top:10px; text-align:center;">
+        <button id="hintBtn" class="hint-btn">💡 Show Hint</button>
+      </div>
+      <div id="hintRevealArea" style="display:none; margin-top:10px;"></div>`;
+    document.getElementById("hintBtn")?.addEventListener("click", revealHint);
+  }
+}
+
+function revealHint() {
+  hintRevealed = true;
+  const hintArea = document.getElementById("hintRevealArea");
+  const hintBtn  = document.getElementById("hintBtn");
+  if (hintBtn) hintBtn.style.display = "none";
+  if (hintArea) {
+    hintArea.style.display = "block";
+    hintArea.innerHTML = `🔑 Your Code: <strong style="letter-spacing:0.12em; color:var(--gold-light);">${currentSecretCode}</strong>
+      <br><small style="color:var(--smoke-dim);">Copy this and paste it into the scratch card input to unlock your fate.</small>`;
+  }
 }
 
 // ======================= VERIFY =======================
@@ -312,12 +339,39 @@ function verifySecretAndProceed() {
     .getElementById("secretAnswer")
     .value.trim()
     .toLowerCase();
+
   if (answer === currentSecretCode) {
     currentUserName = document.getElementById("firstName").value.trim();
-    sendToGoogleSheet();
-    showScratchModal();
+    // Show code prominently so user can copy it into the scratch card
+    const cdEl = document.getElementById("generatedCodeDisplay");
+    if (cdEl) {
+      cdEl.innerHTML = `
+        <div style="text-align:center; padding:4px 0;">
+          ✅ Correct! Copy &amp; paste this code to unlock the scratch card:<br>
+          <strong id="copyableCode" style="font-size:1.1rem; letter-spacing:0.15em;
+            color:var(--gold-light); cursor:pointer;" title="Tap to copy">${currentSecretCode}</strong>
+          <br><small style="color:var(--smoke-dim);">(tap the code to copy it)</small>
+        </div>`;
+      document.getElementById("copyableCode")?.addEventListener("click", () => {
+        navigator.clipboard.writeText(currentSecretCode)
+          .then(() => showNotification("✦ Code copied! Paste it in the scratch card to reveal your fate."))
+          .catch(() => showNotification("Your code: " + currentSecretCode));
+      });
+    }
+    showNotification("✦ Cipher solved! Copy your code and paste it in the scratch card.");
+    setTimeout(() => showScratchModal(), 1400);
   } else {
-    showNotification(`✗ Wrong cipher. Expected: ${currentSecretCode}`);
+    cipherAttempts++;
+    if (cipherAttempts >= 2) {
+      const hintWrapper = document.getElementById("hintBtnWrapper");
+      if (hintWrapper && hintWrapper.style.display === "none") {
+        hintWrapper.style.display = "block";
+      }
+      showNotification('✗ Wrong again — tap "Show Hint" below to reveal your code.');
+    } else {
+      const left = 2 - cipherAttempts;
+      showNotification(`✗ Incorrect. ${left} attempt${left !== 1 ? "s" : ""} left before a hint appears.`);
+    }
   }
 }
 
@@ -359,7 +413,6 @@ function initScratchCard() {
   if (!wrapper) return;
   window.foolRevealed = false;
 
-  // Replace canvas — kills all old listeners cleanly
   const oldCanvas = document.getElementById("scratchCanvas");
   const newCanvas = document.createElement("canvas");
   newCanvas.id = "scratchCanvas";
@@ -370,13 +423,11 @@ function initScratchCard() {
   newCanvas.width = W;
   newCanvas.height = H;
 
-  // Set reward-content height to match canvas
   const rc = document.getElementById("rewardContent");
   if (rc) rc.style.height = H + "px";
 
   const ctx = newCanvas.getContext("2d");
 
-  // Silver gradient
   const g = ctx.createLinearGradient(0, 0, W, H);
   g.addColorStop(0, "#b0b6c2");
   g.addColorStop(0.4, "#d4dae6");
@@ -385,7 +436,6 @@ function initScratchCard() {
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, W, H);
 
-  // Noise texture
   ctx.globalAlpha = 0.15;
   for (let i = 0; i < 5000; i++) {
     ctx.fillStyle = Math.random() > 0.5 ? "#fff" : "#000";
@@ -393,7 +443,6 @@ function initScratchCard() {
   }
   ctx.globalAlpha = 1;
 
-  // Shimmer lines
   ctx.globalAlpha = 0.1;
   for (let i = 0; i < 160; i++) {
     ctx.beginPath();
@@ -405,7 +454,6 @@ function initScratchCard() {
   }
   ctx.globalAlpha = 1;
 
-  // Hint text
   ctx.globalAlpha = 0.2;
   ctx.fillStyle = "#445";
   ctx.font = `bold ${Math.round(W * 0.036)}px 'Courier New', monospace`;
@@ -413,15 +461,12 @@ function initScratchCard() {
   ctx.fillText("✦  S C R A T C H  H E R E  ✦", W / 2, H / 2);
   ctx.globalAlpha = 1;
 
-  // Erase mode for scratching
   ctx.globalCompositeOperation = "destination-out";
   ctx.lineWidth = 34;
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
 
-  let drawing = false,
-    lx = 0,
-    ly = 0;
+  let drawing = false, lx = 0, ly = 0;
 
   function xy(e) {
     const r = newCanvas.getBoundingClientRect();
@@ -433,13 +478,7 @@ function initScratchCard() {
     };
   }
 
-  function start(e) {
-    e.preventDefault();
-    drawing = true;
-    const p = xy(e);
-    lx = p.x;
-    ly = p.y;
-  }
+  function start(e) { e.preventDefault(); drawing = true; const p = xy(e); lx = p.x; ly = p.y; }
   function move(e) {
     if (!drawing) return;
     e.preventDefault();
@@ -448,13 +487,10 @@ function initScratchCard() {
     ctx.moveTo(lx, ly);
     ctx.lineTo(p.x, p.y);
     ctx.stroke();
-    lx = p.x;
-    ly = p.y;
+    lx = p.x; ly = p.y;
     checkReveal();
   }
-  function stop() {
-    drawing = false;
-  }
+  function stop() { drawing = false; }
 
   function checkReveal() {
     if (window.foolRevealed) return;
@@ -564,8 +600,6 @@ function escapeHtml(s) {
   return s.replace(
     /[&<>"']/g,
     (c) =>
-      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
-        c
-      ],
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
   );
 }
